@@ -14,21 +14,27 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          throw new Error("All Fields are required")
           return null;
         }
 
         await dbConnect();
 
         const user = await User.findOne({ email: credentials.email });
-        if (!user) return null;
+        if (!user || !user.password) {
+          throw new Error("User not Found");
+          return null;
+        }
 
         const isValid = await bcrypt.compare(
           credentials.password,
           user.password
         );
 
-        if (!isValid) return null;
-
+        if (!isValid){
+          throw new Error("Invalid Credentials");
+          return null;
+        }
         return {
           id: user._id.toString(),
           email: user.email,
@@ -61,4 +67,5 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
+  secret: process.env.NEXTAUTH_SECRET
 };
