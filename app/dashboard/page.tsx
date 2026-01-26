@@ -1,33 +1,16 @@
-"use client";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { signOut } from "next-auth/react";
+import DashboardComp from "@/components/DashboardComp";
 
-import { useEffect, useRef } from "react";
+export default async function Dashboard() {
+  const session = await getServerSession(authOptions);
 
-export default function Dashboard() {
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  useEffect(() => {
-    const enableAudio = () => {
-      audioRef.current?.play();
-      document.removeEventListener("click", enableAudio);
-    };
-
-    document.addEventListener("click", enableAudio);
-
-    return () => {
-      document.removeEventListener("click", enableAudio);
-    };
-  }, []);
 
   return (
-    <div className="flex h-screen flex-col items-center justify-center gap-6">
-      <h1 className="text-3xl font-black text-center bg-clip-text text-transparent bg-linear-to-r from-black via-white to-black animate-pulse">
-        Waris is the biggest Shit here.
-      </h1>
-
-      <audio ref={audioRef} src="/abc.mp3" />
-      <p className="text-sm text-gray-500">
-        Click here
-      </p>
+      <div className="relative">
+        <h1 className="text-xl m-2 font-semibold">Welcome {session?.user.name}</h1>
+        <DashboardComp/>
     </div>
   );
 }
