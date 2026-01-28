@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 type DisorderResult = {
   key: string;
   label: string;
+  testName: string;
   score: number;
   severity: string;
 };
@@ -36,7 +37,7 @@ export default function ResultPage() {
           `/api/session/result?sessionId=${sessionId}`
         );
         setResult(res.data);
-      } catch (err) {
+      } catch {
         setError("Failed to load results");
       } finally {
         setLoading(false);
@@ -90,9 +91,15 @@ export default function ResultPage() {
             <h2 className="font-semibold">
               {result.dominant.label}
             </h2>
-            <p className="text-lg font-bold text-green-700">
+
+            <p className="text-xs text-neutral-500 mt-1">
+              Screening Tool: {result.dominant.testName}
+            </p>
+
+            <p className="text-lg font-bold text-green-700 mt-2">
               {result.dominant.severity}
             </p>
+
             <p className="text-sm text-neutral-600">
               Score: {result.dominant.score}
             </p>
@@ -101,8 +108,8 @@ export default function ResultPage() {
       ) : null}
 
       <p className="text-xs text-neutral-500 max-w-md">
-        These results are based on standardized screening questionnaires.
-        They are not a medical diagnosis.
+        These results are based on standardized screening questionnaires
+        (PHQ-9, GAD-7, etc.). They are not a medical diagnosis.
         If you feel distressed, please consult a qualified mental health
         professional.
       </p>

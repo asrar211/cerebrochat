@@ -5,11 +5,10 @@ import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import Session from "@/models/Session";
 import Question from "@/models/Question";
-import { SCALE_SCORE_MAP, type ScaleOption } from "@/lib/scale";
+import { SCALE_SCORE_MAP } from "@/lib/scale";
 import { DISORDER_CONFIG, DisorderKey } from "@/lib/disorders";
 
 export async function GET(req: Request) {
-  // ✅ Correct App Router session retrieval
   const authSession = await getServerSession(authOptions);
 
   if (!authSession?.user?.id) {
@@ -34,7 +33,6 @@ export async function GET(req: Request) {
     );
   }
 
-  // 🔹 Fetch all questions in ONE query (no N+1)
   const questionIds = session.answers.map((a) => a.questionId);
   const questions = await Question.find({ _id: { $in: questionIds } });
 
@@ -48,24 +46,23 @@ export async function GET(req: Request) {
     const q = questionMap.get(a.questionId.toString());
     if (!q) continue;
 
-    const score = SCALE_SCORE_MAP[a.option as ScaleOption] ?? 0;
+    const score = SCALE_SCORE_MAP[a.option as keyof typeof SCALE_SCORE_MAP] ?? 0;
     scores[q.category] = (scores[q.category] || 0) + score;
   }
 
   const results = Object.entries(scores).map(([key, score]) => {
     const config = DISORDER_CONFIG[key as DisorderKey];
-
     return {
       key,
       label: config.label,
+      testName: config.testName,
       score,
       severity: config.severity(score),
     };
   });
 
-  const dominant = results.sort(
-    (a, b) => b.score - a.score
-  )[0] ?? null;
+  const dominant =
+    results.sort((a, b) => b.score - a.score)[0] ?? null;
 
   return NextResponse.json({
     results,

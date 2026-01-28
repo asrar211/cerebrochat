@@ -1,35 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/db";
 import Question from "@/models/Question";
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
 
-export async function POST(req: NextRequest) {
-  try {
-    await dbConnect();
+export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
 
-    const { text, category, order, type } = await req.json();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    if (!text || !category || order === undefined) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
+  const body = await req.json();
 
-    const question = await Question.create({
-      text,
-      category,
-      order,
-      type,
-    });
+  await dbConnect();
 
-    return NextResponse.json(question, { status: 201 });
-  } catch (error) {
+  if (Array.isArray(body)) {
+    await Question.deleteMany({});
+    const questions = await Question.insertMany(body);
     return NextResponse.json(
-      { error: "Failed to create question" },
-      { status: 500 }
+      { inserted: questions.length },
+      { status: 201 }
     );
   }
+
+  const question = await Question.create(body);
+  return NextResponse.json(question, { status: 201 });
 }
+
 
 export async function GET() {
   try {

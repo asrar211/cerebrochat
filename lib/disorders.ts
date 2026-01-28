@@ -9,11 +9,13 @@ export const DISORDER_CONFIG: Record<
   DisorderKey,
   {
     label: string;
+    testName: string;
     severity: (score: number) => string;
   }
 > = {
   depression: {
-    label: "Depression (PHQ-9)",
+    label: "Depression",
+    testName: "PHQ-9",
     severity: (score) => {
       if (score <= 4) return "Minimal";
       if (score <= 9) return "Mild";
@@ -24,7 +26,8 @@ export const DISORDER_CONFIG: Record<
   },
 
   anxiety: {
-    label: "Anxiety (GAD-7)",
+    label: "Anxiety",
+    testName: "GAD-7",
     severity: (score) => {
       if (score <= 4) return "Minimal";
       if (score <= 9) return "Mild";
@@ -35,6 +38,7 @@ export const DISORDER_CONFIG: Record<
 
   stress: {
     label: "Stress",
+    testName: "PSS",
     severity: (score) => {
       if (score <= 3) return "Low";
       if (score <= 6) return "Moderate";
@@ -44,6 +48,7 @@ export const DISORDER_CONFIG: Record<
 
   sleep: {
     label: "Sleep Disturbance",
+    testName: "ISI",
     severity: (score) => {
       if (score <= 2) return "Minimal";
       if (score <= 5) return "Mild";
@@ -53,6 +58,7 @@ export const DISORDER_CONFIG: Record<
 
   burnout: {
     label: "Burnout",
+    testName: "MBI",
     severity: (score) => {
       if (score <= 3) return "Low";
       if (score <= 6) return "Moderate";
