@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import axios from "axios";
+import { ScaleOption, SCALE_LABELS } from "@/lib/scale";
 
 type Question = {
   _id: string;
@@ -15,115 +17,129 @@ type Message = {
 };
 
 export default function SessionPage() {
+  const router = useRouter();
   const { sessionId } = useParams<{ sessionId: string }>();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
-  const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
   const [completed, setCompleted] = useState(false);
 
-  // Fetch current question
+  // 🔹 Auto-scroll anchor
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // 🔹 Load current question
   const loadQuestion = async () => {
-    const res = await fetch(`/api/session?sessionId=${sessionId}`);
-    const data = await res.json();
+    try {
+      const res = await axios.get(
+        `/api/session?sessionId=${sessionId}`
+      );
 
-    if (data.message === "Test completed") {
-      setCompleted(true);
-      return;
+      const data = res.data;
+
+      if (data.message === "Test completed") {
+        setCompleted(true);
+        return;
+      }
+
+      setCurrentQuestion(data);
+      setMessages((prev) => [
+        ...prev,
+        { role: "bot", text: data.text },
+      ]);
+    } catch (error) {
+      console.error("Failed to load question", error);
     }
-
-    setCurrentQuestion(data);
-    setMessages((prev) => [
-      ...prev,
-      { role: "bot", text: data.text },
-    ]);
   };
 
+  // Initial load
   useEffect(() => {
-    loadQuestion();
-  }, []);
+    if (sessionId) {
+      loadQuestion();
+    }
+  }, [sessionId]);
 
-  const submitAnswer = async () => {
-    if (!answer.trim() || !currentQuestion) return;
+  // 🔹 Auto-scroll when messages update
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // 🔹 Submit selected scale option
+  const submitAnswer = async (option: ScaleOption) => {
+    if (!currentQuestion || loading) return;
 
     setLoading(true);
 
     // Show user message
     setMessages((prev) => [
       ...prev,
-      { role: "user", text: answer },
+      {
+        role: "user",
+        text: SCALE_LABELS[option],
+      },
     ]);
 
-    await fetch("/api/session/answer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      await axios.post("/api/session/answer", {
         sessionId,
         questionId: currentQuestion._id,
-        answer,
-      }),
-    });
+        option,
+      });
 
-    setAnswer("");
-    setCurrentQuestion(null);
-    setLoading(false);
-
-    // Load next question
-    loadQuestion();
+      setCurrentQuestion(null);
+      await loadQuestion();
+    } catch (error) {
+      console.error("Failed to submit answer", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (completed) {
-    return (
-      <div className="flex h-dvh items-center justify-center text-center">
-        <div>
-          <h2 className="text-xl font-semibold text-green-700">
-            Session Completed
-          </h2>
-          <p className="mt-2 text-sm text-neutral-600">
-            Thank you for completing the assessment.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // 🔹 Redirect on completion (safe)
+  useEffect(() => {
+    if (completed) {
+      router.push(`/session/${sessionId}/result`);
+    }
+  }, [completed, router, sessionId]);
 
   return (
-    <div className="flex h-dvh flex-col">
-      {/* Chat Area */}
+    <div className="flex h-dvh flex-col bg-white">
+      {/* Chat area */}
       <div className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+            className={`max-w-[80%] rounded-xl px-4 py-2 text-sm leading-relaxed ${
               msg.role === "bot"
-                ? "bg-neutral-100 text-neutral-800"
+                ? "bg-neutral-200 text-neutral-800"
                 : "ml-auto bg-green-600 text-white"
             }`}
           >
             {msg.text}
           </div>
         ))}
+
+        {/* 👇 Auto-scroll anchor */}
+        <div ref={bottomRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="border-t p-3">
-        <div className="flex gap-2">
-          <input
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            placeholder="Type your answer..."
-            className="flex-1 rounded-full border px-4 py-2 text-sm outline-none"
-          />
-          <button
-            onClick={submitAnswer}
-            disabled={loading}
-            className="rounded-full bg-green-600 px-4 py-2 text-sm font-semibold text-white disabled:bg-green-300"
-          >
-            Send
-          </button>
+      {/* Scale options */}
+      {currentQuestion && (
+        <div className="border-t bg-white p-3">
+          <div className="grid grid-cols-1 gap-2">
+            {Object.values(ScaleOption).map((opt) => (
+              <button
+                key={opt}
+                disabled={loading}
+                onClick={() => submitAnswer(opt)}
+                className="rounded-full border border-green-600 px-4 py-2 text-sm font-medium text-green-700 transition hover:bg-green-600 hover:text-white disabled:opacity-50"
+              >
+                {SCALE_LABELS[opt]}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

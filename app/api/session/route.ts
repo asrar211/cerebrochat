@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { headers } from "next/headers";
 import { dbConnect } from "@/lib/db";
 import Session from "@/models/Session";
 import Question from "@/models/Question";

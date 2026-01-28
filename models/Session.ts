@@ -1,16 +1,17 @@
-import mongoose, {Schema, models, Document} from "mongoose";
+import mongoose, { Schema, models, Document } from "mongoose";
+import { ScaleOption } from "@/lib/scale";
 
 export interface ISession extends Document {
-    userId: mongoose.Types.ObjectId;
-    currentQuestionIndex: number;
-    answers: {
-        questionId: mongoose.Types.ObjectId;
-        answer: string;
-    }[];
-    status: "inProgress" | "completed"
+  userId: mongoose.Types.ObjectId;
+  currentQuestionIndex: number;
+  answers: {
+    questionId: mongoose.Types.ObjectId;
+    option: ScaleOption;
+  }[];
+  status: "in_progress" | "completed";
 }
 
-const sessionSchema = new Schema<ISession>(
+const SessionSchema = new Schema<ISession>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
 
@@ -23,18 +24,22 @@ const sessionSchema = new Schema<ISession>(
           ref: "Question",
           required: true,
         },
-        answer: { type: String, required: true },
+        option: {
+          type: String,
+          enum: Object.values(ScaleOption),
+          required: true,
+        },
       },
     ],
+
     status: {
       type: String,
-      enum: ["inProgress", "completed"],
-      default: "inProgress",
+      enum: ["in_progress", "completed"],
+      default: "in_progress",
     },
   },
   { timestamps: true }
 );
 
-const Session = models.Session || mongoose.model<ISession>("Session", sessionSchema);
-
-export default Session;
+export default models.Session ||
+  mongoose.model<ISession>("Session", SessionSchema);

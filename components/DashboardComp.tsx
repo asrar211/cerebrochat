@@ -4,35 +4,34 @@ import { CircleUserRound } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
 
 export default function DashboardComp() {
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const startSession = async () => {
-    try {
-      setLoading(true);
+const startSession = async () => {
+  try {
+    setLoading(true);
 
-      const res = await fetch("/api/session", {
-        method: "POST",
-      });
+    const res = await axios.post("/api/session");
 
-      if (!res.ok) {
-        throw new Error("Failed to start session");
-      }
-
-      const session = await res.json();
-
-      // Redirect to chatbot page
-      router.push(`/session/${session._id}`);
-    } catch (error) {
-      console.error(error);
-      alert("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
+    if (res.data?.error) {
+      throw new Error(res.data.error);
     }
-  };
+
+    const session = res.data;
+
+    router.push(`/session/${session._id}`);
+  } catch (error) {
+    console.error(error);
+    alert("Something went wrong. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="flex h-dvh flex-col items-center justify-center px-4 text-center">

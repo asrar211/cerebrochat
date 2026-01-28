@@ -1,32 +1,31 @@
-import mongoose, {Schema, models, Document} from "mongoose";
+import mongoose, { Schema, models, Document } from "mongoose";
 
 export interface IQuestion extends Document {
-    _id: mongoose.Types.ObjectId;
-    text: string;
-    category: "anxiety" | "depression" | "stress";
-    order: number;
-    type: "text" | "scale" | "yesno";
-    isActive: boolean;
+  text: string;
+  category: "depression" | "anxiety";
+  type: "scale";
+  order: number;
+  isActive: boolean;
 }
 
-const QuestionSchema = new Schema<IQuestion>({
+const QuestionSchema = new Schema<IQuestion>(
+  {
     text: { type: String, required: true },
     category: {
       type: String,
-      enum: ["anxiety", "depression", "stress"],
+      enum: ["depression", "anxiety"],
       required: true,
     },
-    order: { type: Number, required: true },
     type: {
       type: String,
-      enum: ["text", "scale", "yesno"],
-      default: "text",
+      enum: ["scale"],
+      default: "scale",
     },
+    order: { type: Number, required: true },
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
 
-const Question = models.Question || mongoose.model<IQuestion>("Question", QuestionSchema);
-
-export default Question;
+export default models.Question ||
+  mongoose.model<IQuestion>("Question", QuestionSchema);
