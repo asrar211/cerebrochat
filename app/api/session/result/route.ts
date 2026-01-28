@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { headers } from "next/headers";
 import { authOptions } from "@/lib/auth";
-import {dbConnect} from "@/lib/db";
+import { dbConnect } from "@/lib/db";
 import Session from "@/models/Session";
 import Question from "@/models/Question";
-import { SCALE_SCORE_MAP } from "@/lib/scale";
-import { getPHQ9Severity, getGAD7Severity } from "@/lib/severity";
+import { SCALE_SCORE_MAP, type ScaleOption } from "@/lib/scale";
+import { DISORDER_CONFIG, DisorderKey } from "@/lib/disorders";
 
 export async function GET(req: Request) {
+  // ✅ Correct App Router session retrieval
   const authSession = await getServerSession(authOptions);
 
   if (!authSession?.user?.id) {
@@ -17,37 +18,57 @@ export async function GET(req: Request) {
 
   const sessionId = new URL(req.url).searchParams.get("sessionId");
   if (!sessionId) {
-    return NextResponse.json({ error: "Session ID required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Session ID required" },
+      { status: 400 }
+    );
   }
 
   await dbConnect();
 
   const session = await Session.findById(sessionId);
   if (!session) {
-    return NextResponse.json({ error: "Session not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Session not found" },
+      { status: 404 }
+    );
   }
 
-  let depressionScore = 0;
-  let anxietyScore = 0;
+  // 🔹 Fetch all questions in ONE query (no N+1)
+  const questionIds = session.answers.map((a) => a.questionId);
+  const questions = await Question.find({ _id: { $in: questionIds } });
+
+  const questionMap = new Map(
+    questions.map((q) => [q._id.toString(), q])
+  );
+
+  const scores: Record<string, number> = {};
 
   for (const a of session.answers) {
-    const q = await Question.findById(a.questionId);
+    const q = questionMap.get(a.questionId.toString());
     if (!q) continue;
 
-    const score = SCALE_SCORE_MAP[a.option as keyof typeof SCALE_SCORE_MAP] ?? 0;
-
-    if (q.category === "depression") depressionScore += score;
-    if (q.category === "anxiety") anxietyScore += score;
+    const score = SCALE_SCORE_MAP[a.option as ScaleOption] ?? 0;
+    scores[q.category] = (scores[q.category] || 0) + score;
   }
 
+  const results = Object.entries(scores).map(([key, score]) => {
+    const config = DISORDER_CONFIG[key as DisorderKey];
+
+    return {
+      key,
+      label: config.label,
+      score,
+      severity: config.severity(score),
+    };
+  });
+
+  const dominant = results.sort(
+    (a, b) => b.score - a.score
+  )[0] ?? null;
+
   return NextResponse.json({
-    depression: {
-      score: depressionScore,
-      severity: getPHQ9Severity(depressionScore),
-    },
-    anxiety: {
-      score: anxietyScore,
-      severity: getGAD7Severity(anxietyScore),
-    },
+    results,
+    dominant,
   });
 }

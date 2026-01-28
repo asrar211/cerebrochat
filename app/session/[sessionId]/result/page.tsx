@@ -4,19 +4,21 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+type DisorderResult = {
+  key: string;
+  label: string;
+  score: number;
+  severity: string;
+};
+
 type ScreeningResult = {
-  depression: {
-    score: number;
-    severity: string;
-  };
-  anxiety: {
-    score: number;
-    severity: string;
-  };
+  results: DisorderResult[];
+  dominant: DisorderResult | null;
 };
 
 export default function ResultPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
+
   const [result, setResult] = useState<ScreeningResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,22 +62,10 @@ export default function ResultPage() {
     );
   }
 
-  const dominant =
-  result.depression.score >= result.anxiety.score
-    ? {
-        title: "Depression (PHQ-9)",
-        score: result.depression.score,
-        severity: result.depression.severity,
-      }
-    : {
-        title: "Anxiety (GAD-7)",
-        score: result.anxiety.score,
-        severity: result.anxiety.severity,
-      }
-      ;
-      const hasNoSymptoms =
-  result.depression.score === 0 &&
-  result.anxiety.score === 0;
+  const hasNoSymptoms = result.results.every(
+    (r) => r.score === 0
+  );
+
   return (
     <div className="flex h-dvh flex-col items-center justify-center px-4 text-center space-y-6">
       <h1 className="text-2xl font-semibold text-green-700">
@@ -83,36 +73,36 @@ export default function ResultPage() {
       </h1>
 
       {hasNoSymptoms ? (
-  <div className="w-full max-w-sm space-y-4">
-    <div className="rounded-lg border p-4">
-      <h2 className="font-semibold text-green-700">
-        No Significant Symptoms Detected
-      </h2>
-      <p className="text-sm text-neutral-600 mt-2">
-        Your responses do not indicate notable symptoms of anxiety or depression
-        based on this screening.
-      </p>
-    </div>
-  </div>
-) : (
-  <div className="w-full max-w-sm space-y-4">
-    <div className="rounded-lg border p-4">
-      <h2 className="font-semibold">{dominant.title}</h2>
-      <p className="text-lg font-bold text-green-700">
-        {dominant.severity}
-      </p>
-      <p className="text-sm text-neutral-600">
-        Score: {dominant.score}
-      </p>
-    </div>
-  </div>
-)}
-
-
+        <div className="w-full max-w-sm">
+          <div className="rounded-lg border p-4">
+            <h2 className="font-semibold text-green-700">
+              No Significant Symptoms Detected
+            </h2>
+            <p className="text-sm text-neutral-600 mt-2">
+              Your responses do not indicate elevated screening symptoms
+              based on this assessment.
+            </p>
+          </div>
+        </div>
+      ) : result.dominant ? (
+        <div className="w-full max-w-sm">
+          <div className="rounded-lg border p-4">
+            <h2 className="font-semibold">
+              {result.dominant.label}
+            </h2>
+            <p className="text-lg font-bold text-green-700">
+              {result.dominant.severity}
+            </p>
+            <p className="text-sm text-neutral-600">
+              Score: {result.dominant.score}
+            </p>
+          </div>
+        </div>
+      ) : null}
 
       <p className="text-xs text-neutral-500 max-w-md">
-        These results are based on standardized screening questionnaires
-        (PHQ-9 and GAD-7). They are not a medical diagnosis.
+        These results are based on standardized screening questionnaires.
+        They are not a medical diagnosis.
         If you feel distressed, please consult a qualified mental health
         professional.
       </p>

@@ -2,7 +2,7 @@ import mongoose, { Schema, models, Document } from "mongoose";
 
 export interface IQuestion extends Document {
   text: string;
-  category: "depression" | "anxiety";
+  category: "depression" | "anxiety" | "stress" | "sleep" | "burnout";
   type: "scale";
   order: number;
   isActive: boolean;
@@ -12,10 +12,16 @@ const QuestionSchema = new Schema<IQuestion>(
   {
     text: { type: String, required: true },
     category: {
-      type: String,
-      enum: ["depression", "anxiety"],
-      required: true,
-    },
+  type: String,
+  enum: [
+    "depression",
+    "anxiety",
+    "stress",
+    "sleep",
+    "burnout",
+    ],
+  required: true,
+  },
     type: {
       type: String,
       enum: ["scale"],
