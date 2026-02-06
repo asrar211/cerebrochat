@@ -3,6 +3,7 @@ import { dbConnect } from "./db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
 import { NextAuthOptions } from "next-auth";
+import { loginSchema } from "@/lib/validation/schemas";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,28 +14,32 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("All Fields are required")
-          return null;
+        const parsed = loginSchema.safeParse({
+          email: credentials?.email ?? "",
+          password: credentials?.password ?? "",
+        });
+        if (!parsed.success) {
+          throw new Error("Invalid email or password");
         }
 
         await dbConnect();
 
-        const user = await User.findOne({ email: credentials.email });
+        const user = await User.findOne({ email: parsed.data.email }).select(
+          "+password"
+        );
         if (!user || !user.password) {
-          throw new Error("User not Found");
-          return null;
+          throw new Error("Invalid email or password");
         }
 
         const isValid = await bcrypt.compare(
-          credentials.password,
+          parsed.data.password,
           user.password
         );
 
-        if (!isValid){
-          throw new Error("Invalid Credentials");
-          return null;
+        if (!isValid) {
+          throw new Error("Invalid email or password");
         }
+
         return {
           id: user._id.toString(),
           email: user.email,
@@ -67,5 +72,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/login",
   },
-  secret: process.env.NEXTAUTH_SECRET
+
+  secret: process.env.NEXTAUTH_SECRET,
 };

@@ -1,9 +1,4 @@
-export type DisorderKey =
-  | "depression"
-  | "anxiety"
-  | "stress"
-  | "sleep"
-  | "burnout";
+import { DisorderKey } from "@/types/disorder";
 
 export const DISORDER_CONFIG: Record<
   DisorderKey,
@@ -46,9 +41,9 @@ export const DISORDER_CONFIG: Record<
     },
   },
 
-  sleep: {
-    label: "Sleep Disturbance",
-    testName: "ISI",
+  adhd: {
+    label: "ADHD",
+    testName: "ADHD-SR",
     severity: (score) => {
       if (score <= 2) return "Minimal";
       if (score <= 5) return "Mild";
@@ -56,9 +51,9 @@ export const DISORDER_CONFIG: Record<
     },
   },
 
-  burnout: {
-    label: "Burnout",
-    testName: "MBI",
+  ocd: {
+    label: "Obsessive-Compulsive Disorder",
+    testName: "Y-BOCS",
     severity: (score) => {
       if (score <= 3) return "Low";
       if (score <= 6) return "Moderate";

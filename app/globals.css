@@ -1,5 +1,36 @@
 @import "tailwindcss";
 
-body{
-  background-color: rgb(247, 247, 246);
+:root {
+  --app-bg: #f6f6f2;
+  --app-ink: #13261d;
+  --app-muted: #5f6f66;
+  --app-border: #dfe7e1;
+  --app-accent: #2f6f5e;
+  --app-accent-strong: #1f5347;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--app-ink);
+  background:
+    radial-gradient(circle at 10% 10%, #e5f1ec 0%, transparent 40%),
+    radial-gradient(circle at 90% 0%, #eef5f1 0%, transparent 35%),
+    linear-gradient(180deg, #f8f7f3 0%, #f3f1ec 100%);
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: #cfe7dc;
 }

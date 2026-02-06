@@ -41,5 +41,7 @@ const SessionSchema = new Schema<ISession>(
   { timestamps: true }
 );
 
+SessionSchema.index({ userId: 1, createdAt: -1 });
+
 export default models.Session ||
   mongoose.model<ISession>("Session", SessionSchema);

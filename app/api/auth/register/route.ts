@@ -1,42 +1,45 @@
-import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/db";
 import User from "@/models/User";
+import { registerSchema } from "@/lib/validation/schemas";
+import { jsonError, jsonOk, zodErrorsToFieldMap } from "@/lib/api/response";
+import { readJson } from "@/lib/api/parse";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
+  const body = await readJson(req);
+  if (!body) {
+    return jsonError("Invalid JSON payload", 400, "invalid_json");
+  }
+
+  const parsed = registerSchema.safeParse(body);
+  if (!parsed.success) {
+    return jsonError(
+      "Please check the highlighted fields",
+      400,
+      "validation_error",
+      zodErrorsToFieldMap(parsed.error)
+    );
+  }
+
   try {
-    const { email, name, password } = await req.json();
-
-    if (!email || !name || !password) {
-      return NextResponse.json(
-        { error: "All fields are required" },
-        { status: 400 }
-      );
-    }
-
     await dbConnect();
 
-    const exists = await User.findOne({ email });
+    const { email, name, password } = parsed.data;
+
+    const exists = await User.findOne({ email }).select("_id").lean();
     if (exists) {
-      return NextResponse.json(
-        { error: "User already exists" },
-        { status: 409 }
-      );
+      return jsonError("Email already in use", 409, "conflict");
     }
 
-    await User.create({
+    const user = await User.create({
       email,
       name,
       password,
     });
 
-    return NextResponse.json({ success: true }, { status: 201 });
-
+    return jsonOk({ userId: user._id.toString() }, { status: 201 });
   } catch (error) {
-    console.error("REGISTER_ERROR:", error);
-
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    logger.error("REGISTER_ERROR", error);
+    return jsonError("Internal server error", 500, "server_error");
   }
 }

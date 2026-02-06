@@ -1,33 +1,49 @@
-import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/db";
 import Question from "@/models/Question";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
+import { questionInputSchema } from "@/lib/validation/schemas";
+import { jsonError, jsonOk, zodErrorsToFieldMap } from "@/lib/api/response";
+import { readJson } from "@/lib/api/parse";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) {
+    return jsonError("Unauthorized", 401, "unauthorized");
   }
 
-  const body = await req.json();
+  const body = await readJson(req);
+  if (!body) {
+    return jsonError("Invalid JSON payload", 400, "invalid_json");
+  }
 
-  await dbConnect();
-
-  if (Array.isArray(body)) {
-    await Question.deleteMany({});
-    const questions = await Question.insertMany(body);
-    return NextResponse.json(
-      { inserted: questions.length },
-      { status: 201 }
+  const parsed = questionInputSchema.safeParse(body);
+  if (!parsed.success) {
+    return jsonError(
+      "Please check the highlighted fields",
+      400,
+      "validation_error",
+      zodErrorsToFieldMap(parsed.error)
     );
   }
 
-  const question = await Question.create(body);
-  return NextResponse.json(question, { status: 201 });
-}
+  try {
+    await dbConnect();
 
+    if (Array.isArray(parsed.data)) {
+      const questions = await Question.insertMany(parsed.data);
+      return jsonOk({ inserted: questions.length }, { status: 201 });
+    }
+
+    const question = await Question.create(parsed.data);
+    return jsonOk({ id: question._id.toString() }, { status: 201 });
+  } catch (error) {
+    logger.error("QUESTIONS_POST_ERROR", error);
+    return jsonError("Failed to create question", 500, "server_error");
+  }
+}
 
 export async function GET() {
   try {
@@ -35,13 +51,19 @@ export async function GET() {
 
     const questions = await Question.find({ isActive: true })
       .sort({ order: 1 })
-      .select("_id text category type");
+      .select("_id text category type")
+      .lean();
 
-    return NextResponse.json(questions);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch questions" },
-      { status: 500 }
+    return jsonOk(
+      questions.map((q) => ({
+        id: q._id.toString(),
+        text: q.text,
+        category: q.category,
+        type: q.type,
+      }))
     );
+  } catch (error) {
+    logger.error("QUESTIONS_GET_ERROR", error);
+    return jsonError("Failed to fetch questions", 500, "server_error");
   }
 }
