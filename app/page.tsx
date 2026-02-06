@@ -25,11 +25,7 @@ export default async function Home() {
             aria-label="View profile"
           >
           <CircleUserRound className="h-8 w-5 text-emerald-700" />
-          </ButtonLink>}
-          <ButtonLink href="/register" variant="secondary" size="sm">
-            Create account
-          </ButtonLink>
-          
+          </ButtonLink>}     
         </div>
       </nav>
 

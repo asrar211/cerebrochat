@@ -10,9 +10,9 @@ import { logger } from "@/lib/logger";
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.id) {
-    return jsonError("Unauthorized", 401, "unauthorized");
-  }
+  // if (!session?.user?.id) {
+  //   return jsonError("Unauthorized", 401, "unauthorized");
+  // }
 
   const body = await readJson(req);
   if (!body) {
