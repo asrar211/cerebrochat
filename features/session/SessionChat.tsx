@@ -151,6 +151,21 @@ export default function SessionChat() {
           </div>
         ))}
 
+        {loading && messages.length > 0 ? (
+          <div className="max-w-[70%] rounded-2xl bg-white px-4 py-3 text-sm text-emerald-800 shadow-sm">
+            <div className="flex items-center gap-3">
+              {/* <span className="text-xs uppercase tracking-[0.2em] text-emerald-500">
+                Typing
+              </span> */}
+              <div className="typing-dots flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {loading && !messages.length ? (
           <div className="space-y-3">
             <Skeleton className="h-6 w-2/3" />
