@@ -14,6 +14,7 @@ export type SessionDominant = {
   label: string;
   severity: string;
   score: number;
+  normalizedScore: number;
 };
 
 export type SessionSummary = {

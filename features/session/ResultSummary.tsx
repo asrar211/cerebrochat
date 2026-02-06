@@ -117,6 +117,9 @@ export default function ResultSummary() {
             <p className="text-sm text-emerald-800/80">
               Score: {dominant.score}
             </p>
+            <p className="text-xs text-emerald-700/70">
+              Normalized intensity: {Math.round(dominant.normalizedScore * 100)}%
+            </p>
           </Card>
         ) : null}
 
@@ -126,8 +129,8 @@ export default function ResultSummary() {
           </h3>
           <div className="mt-4 grid gap-3">
             {result.results.map((item) => (
+              <div key={item.key}>
               <div
-                key={item.key}
                 className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50/60 px-4 py-3"
               >
                 <div>
@@ -142,8 +145,20 @@ export default function ResultSummary() {
                   <p className="text-sm font-semibold text-emerald-900">
                     {item.severity}
                   </p>
-                  <p className="text-xs text-emerald-700/80">{item.score}</p>
+                  <p className="text-xs text-emerald-700/80">Score: {item.score}</p>
+                  <p className="text-xs text-emerald-700/70">
+                    {Math.round(item.normalizedScore * 100)}% intensity
+                  </p>
                 </div>
+              </div>
+              <div className="mt-2 h-2 w-full rounded-full bg-emerald-100">
+                <div
+                  className="h-2 rounded-full bg-emerald-600"
+                  style={{
+                    width: `${Math.round(item.normalizedScore * 100)}%`,
+                  }}
+                />
+              </div>
               </div>
             ))}
           </div>

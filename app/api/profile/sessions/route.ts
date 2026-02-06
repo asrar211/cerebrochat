@@ -69,6 +69,13 @@ export async function GET(req: Request) {
         adhd: 0,
         ocd: 0,
       };
+      const counts: Record<DisorderKey, number> = {
+        depression: 0,
+        anxiety: 0,
+        stress: 0,
+        adhd: 0,
+        ocd: 0,
+      };
 
       for (const answer of sessionItem.answers) {
         const category = questionMap.get(answer.questionId.toString());
@@ -77,7 +84,15 @@ export async function GET(req: Request) {
         if (!Object.values(ScaleOption).includes(option)) continue;
         const score = SCALE_SCORE_MAP[option] ?? 0;
         scores[category] += score;
+        counts[category] += 1;
       }
+
+      const maxScaleScore = Math.max(...Object.values(SCALE_SCORE_MAP));
+      const normalizedScores = DISORDER_KEYS.reduce((acc, key) => {
+        const count = counts[key];
+        acc[key] = count > 0 ? scores[key] / (count * maxScaleScore) : 0;
+        return acc;
+      }, {} as Record<DisorderKey, number>);
 
       const results = DISORDER_KEYS.map((key) => {
         const config = DISORDER_CONFIG[key];
@@ -88,13 +103,20 @@ export async function GET(req: Request) {
           label: config.label,
           severity: config.severity(score),
           score,
+          normalizedScore: normalizedScores[key],
         };
       });
 
-      const dominant = results.reduce((max, current) => {
-        if (!max) return current.score > 0 ? current : null;
-        return current.score > max.score ? current : max;
-      }, null as (typeof results)[number] | null);
+      const dominantKey = DISORDER_KEYS.reduce<DisorderKey | null>((best, key) => {
+        if (normalizedScores[key] <= 0) {
+          return best;
+        }
+        if (!best) return key;
+        return normalizedScores[key] > normalizedScores[best] ? key : best;
+      }, null);
+
+      const dominant =
+        dominantKey ? results.find((item) => item.key === dominantKey) ?? null : null;
 
       return {
         id: sessionItem._id.toString(),

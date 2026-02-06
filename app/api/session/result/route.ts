@@ -6,7 +6,7 @@ import type { ISession } from "@/models/Session";
 import Question from "@/models/Question";
 import { SCALE_SCORE_MAP } from "@/lib/scale";
 import { DISORDER_CONFIG } from "@/lib/disorders";
-import { DISORDER_KEYS } from "@/types/disorder";
+import { DISORDER_KEYS, type DisorderKey } from "@/types/disorder";
 import { jsonError, jsonOk, zodErrorsToFieldMap } from "@/lib/api/response";
 import { sessionQuerySchema } from "@/lib/validation/schemas";
 import { logger } from "@/lib/logger";
@@ -57,15 +57,37 @@ export async function GET(req: Request) {
       questions.map((q) => [q._id.toString(), q])
     );
 
-    const scores: Record<string, number> = {};
+    const scores: Record<DisorderKey, number> = {
+      depression: 0,
+      anxiety: 0,
+      stress: 0,
+      adhd: 0,
+      ocd: 0,
+    };
+    const counts: Record<DisorderKey, number> = {
+      depression: 0,
+      anxiety: 0,
+      stress: 0,
+      adhd: 0,
+      ocd: 0,
+    };
 
     for (const answer of session.answers) {
       const question = questionMap.get(answer.questionId.toString());
       if (!question) continue;
 
       const score = SCALE_SCORE_MAP[answer.option] ?? 0;
-      scores[question.category] = (scores[question.category] || 0) + score;
+      const category = question.category as DisorderKey;
+      scores[category] += score;
+      counts[category] += 1;
     }
+
+    const maxScaleScore = Math.max(...Object.values(SCALE_SCORE_MAP));
+    const normalizedScores = DISORDER_KEYS.reduce((acc, key) => {
+      const count = counts[key];
+      acc[key] = count > 0 ? scores[key] / (count * maxScaleScore) : 0;
+      return acc;
+    }, {} as Record<DisorderKey, number>);
 
     const results = DISORDER_KEYS.map((key) => {
       const config = DISORDER_CONFIG[key];
@@ -77,13 +99,20 @@ export async function GET(req: Request) {
         testName: config.testName,
         score,
         severity: config.severity(score),
+        normalizedScore: normalizedScores[key],
       };
     });
 
-    const dominant = results.reduce((max, current) => {
-      if (!max) return current.score > 0 ? current : null;
-      return current.score > max.score ? current : max;
-    }, null as (typeof results)[number] | null);
+    const dominantKey = DISORDER_KEYS.reduce<DisorderKey | null>((best, key) => {
+      if (normalizedScores[key] <= 0) {
+        return best;
+      }
+      if (!best) return key;
+      return normalizedScores[key] > normalizedScores[best] ? key : best;
+    }, null);
+
+    const dominant =
+      dominantKey ? results.find((item) => item.key === dominantKey) ?? null : null;
 
     return jsonOk({
       results,

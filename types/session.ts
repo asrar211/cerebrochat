@@ -20,6 +20,7 @@ export type SessionResultItem = {
   testName: string;
   score: number;
   severity: string;
+  normalizedScore: number;
 };
 
 export type SessionResultPayload = {

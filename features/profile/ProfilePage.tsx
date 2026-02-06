@@ -315,6 +315,9 @@ export default function ProfilePage() {
                             {sessionItem.dominant.label}
                           </span>{" "}
                           · {sessionItem.dominant.severity} (score {sessionItem.dominant.score})
+                          <span className="ml-2 text-xs text-emerald-700/70">
+                            {Math.round(sessionItem.dominant.normalizedScore * 100)}% intensity
+                          </span>
                         </div>
                       ) : null}
 
