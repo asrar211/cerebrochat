@@ -52,7 +52,7 @@ export default function ResultSummary() {
 
   if (loading) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[var(--app-bg)] px-4">
+      <div className="flex min-h-dvh items-center justify-center bg-(--app-bg) px-4">
         <Card className="w-full max-w-xl space-y-4">
           <Skeleton className="h-6 w-1/2" />
           <Skeleton className="h-4 w-3/4" />
@@ -64,7 +64,7 @@ export default function ResultSummary() {
 
   if (error || !result) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-[var(--app-bg)] px-4">
+      <div className="flex min-h-dvh items-center justify-center bg-(--app-bg) px-4">
         <Card className="w-full max-w-xl space-y-4">
           <Alert>{error ?? "Something went wrong"}</Alert>
           <Button
@@ -79,7 +79,7 @@ export default function ResultSummary() {
   }
 
   return (
-    <div className="min-h-dvh bg-[var(--app-bg)] px-4 py-10">
+    <div className="min-h-dvh bg-(--app-bg) px-4 py-10">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold text-emerald-950">

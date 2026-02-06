@@ -6,7 +6,7 @@ import Question from "@/models/Question";
 import { jsonError, jsonOk, zodErrorsToFieldMap } from "@/lib/api/response";
 import { sessionsQuerySchema } from "@/lib/validation/schemas";
 import { logger } from "@/lib/logger";
-import { SCALE_SCORE_MAP } from "@/lib/scale";
+import { SCALE_SCORE_MAP, ScaleOption } from "@/lib/scale";
 import { DISORDER_CONFIG } from "@/lib/disorders";
 import { DISORDER_KEYS, type DisorderKey } from "@/types/disorder";
 
@@ -73,7 +73,9 @@ export async function GET(req: Request) {
       for (const answer of sessionItem.answers) {
         const category = questionMap.get(answer.questionId.toString());
         if (!category) continue;
-        const score = SCALE_SCORE_MAP[answer.option] ?? 0;
+        const option = answer.option as ScaleOption;
+        if (!Object.values(ScaleOption).includes(option)) continue;
+        const score = SCALE_SCORE_MAP[option] ?? 0;
         scores[category] += score;
       }
 
