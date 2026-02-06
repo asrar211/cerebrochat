@@ -149,7 +149,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh bg-[var(--app-bg)] px-6 py-10">
+      <div className="min-h-dvh bg-(--app-bg) px-6 py-10">
         <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[1fr_1.2fr]">
           <Card className="space-y-4">
             <Skeleton className="h-6 w-1/2" />
@@ -168,7 +168,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-dvh bg-[var(--app-bg)] px-6 py-10">
+    <div className="min-h-dvh bg-(--app-bg) px-6 py-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-semibold text-emerald-950">Profile</h1>
