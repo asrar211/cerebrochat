@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import Session from "@/models/Session";
+import type { ISession } from "@/models/Session";
 import Question from "@/models/Question";
 import { SCALE_SCORE_MAP } from "@/lib/scale";
 import { DISORDER_CONFIG } from "@/lib/disorders";
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
     const session = await Session.findOne({
       _id: parsed.data.sessionId,
       userId: authSession.user.id,
-    });
+    }).lean<ISession>();
 
     if (!session) {
       return jsonError("Session not found", 404, "not_found");
@@ -47,7 +48,7 @@ export async function GET(req: Request) {
       await session.save();
     }
 
-    const questionIds = session.answers.map((a) => a.questionId);
+    const questionIds = session.answers.map((answer) => answer.questionId);
     const questions = await Question.find({ _id: { $in: questionIds } })
       .select("_id category")
       .lean();
