@@ -57,8 +57,8 @@ export async function GET(req: Request) {
       .select("_id category")
       .lean();
 
-    const questionMap = new Map(
-      questions.map((q) => [q._id.toString(), q.category])
+    const questionMap = new Map<string, DisorderKey>(
+      questions.map((q) => [q._id.toString(), q.category as DisorderKey])
     );
 
     const summaries = sessions.map((sessionItem) => {
