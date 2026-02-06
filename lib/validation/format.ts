@@ -2,7 +2,8 @@ import type { ZodError } from "zod";
 import type { ApiFieldErrors } from "@/types/api";
 
 export function zodErrorsToFieldMap(error: ZodError) {
-  const { fieldErrors } = error.flatten();
+  const fieldErrors = error.flatten()
+    .fieldErrors as Record<string, string[] | undefined>;
   const mapped: ApiFieldErrors = {};
 
   for (const [field, messages] of Object.entries(fieldErrors)) {

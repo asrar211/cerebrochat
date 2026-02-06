@@ -56,11 +56,18 @@ export default function SessionChat() {
         return;
       }
 
-      if (data.question && data.question.id !== currentQuestionId) {
-        setCurrentQuestionId(data.question.id);
+      const question = data.question;
+
+      if (!question) {
+        setError("No question available right now.");
+        return;
+      }
+
+      if (question.id !== currentQuestionId) {
+        setCurrentQuestionId(question.id);
         setMessages((prev) => [
           ...prev,
-          { role: "bot", text: data.question.text },
+          { role: "bot", text: question.text },
         ]);
       }
     } catch (err) {
