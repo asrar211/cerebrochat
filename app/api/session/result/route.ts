@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import Session from "@/models/Session";
+import type { ISession } from "@/models/Session";
 import Question from "@/models/Question";
 import { SCALE_SCORE_MAP, ScaleOption } from "@/lib/scale";
 import { DISORDER_CONFIG } from "@/lib/disorders";
@@ -47,7 +48,9 @@ export async function GET(req: Request) {
       await session.save();
     }
 
-    const questionIds = session.answers.map((answer) => answer.questionId);
+    const questionIds = session.answers.map(
+      (answer: ISession["answers"][number]) => answer.questionId
+    );
     const questions = await Question.find({ _id: { $in: questionIds } })
       .select("_id category options order")
       .lean();
