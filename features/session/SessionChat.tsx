@@ -129,7 +129,7 @@ export default function SessionChat() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[var(--app-bg)]">
+    <div className="flex min-h-dvh flex-col bg-(--app-bg)">
       <div className="border-b border-emerald-100 bg-white/70 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
           <p className="text-sm font-semibold text-emerald-900">{progressLabel}</p>
