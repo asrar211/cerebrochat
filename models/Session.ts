@@ -1,12 +1,11 @@
 import mongoose, { Schema, models, Document } from "mongoose";
-import { ScaleOption } from "@/lib/scale";
 
 export interface ISession extends Document {
   userId: mongoose.Types.ObjectId;
   currentQuestionIndex: number;
   answers: {
     questionId: mongoose.Types.ObjectId;
-    option: ScaleOption;
+    option: string;
   }[];
   status: "in_progress" | "completed";
 }
@@ -26,7 +25,6 @@ const SessionSchema = new Schema<ISession>(
         },
         option: {
           type: String,
-          enum: Object.values(ScaleOption),
           required: true,
         },
       },

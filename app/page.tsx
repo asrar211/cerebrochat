@@ -21,7 +21,7 @@ export default async function Home() {
           {session && 
           <ButtonLink
             href="/profile"
-            className="absolute right-4 top-4 rounded-full border border-emerald-100 bg-white p-2 shadow-sm"
+            className="rounded-full border border-emerald-100 bg-white p-2 shadow-sm"
             aria-label="View profile"
           >
           <CircleUserRound className="h-8 w-5 text-emerald-700" />

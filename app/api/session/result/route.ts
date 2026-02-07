@@ -2,9 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { dbConnect } from "@/lib/db";
 import Session from "@/models/Session";
-import type { ISession } from "@/models/Session";
 import Question from "@/models/Question";
-import { SCALE_SCORE_MAP } from "@/lib/scale";
+import { SCALE_SCORE_MAP, ScaleOption } from "@/lib/scale";
 import { DISORDER_CONFIG } from "@/lib/disorders";
 import { DISORDER_KEYS, type DisorderKey } from "@/types/disorder";
 import { jsonError, jsonOk, zodErrorsToFieldMap } from "@/lib/api/response";
@@ -36,7 +35,7 @@ export async function GET(req: Request) {
     const session = await Session.findOne({
       _id: parsed.data.sessionId,
       userId: authSession.user.id,
-    }).lean<ISession>();
+    });
 
     if (!session) {
       return jsonError("Session not found", 404, "not_found");
@@ -50,11 +49,25 @@ export async function GET(req: Request) {
 
     const questionIds = session.answers.map((answer) => answer.questionId);
     const questions = await Question.find({ _id: { $in: questionIds } })
-      .select("_id category")
+      .select("_id category options order")
       .lean();
 
-    const questionMap = new Map(
-      questions.map((q) => [q._id.toString(), q])
+    const questionMap = new Map<
+      string,
+      {
+        category: DisorderKey;
+        options?: { value: string; score: number }[];
+        order: number;
+      }
+    >(
+      questions.map((q) => [
+        q._id.toString(),
+        {
+          category: q.category as DisorderKey,
+          options: q.options ?? undefined,
+          order: q.order,
+        },
+      ])
     );
 
     const scores: Record<DisorderKey, number> = {
@@ -64,7 +77,7 @@ export async function GET(req: Request) {
       adhd: 0,
       ocd: 0,
     };
-    const counts: Record<DisorderKey, number> = {
+    const maxPossible: Record<DisorderKey, number> = {
       depression: 0,
       anxiety: 0,
       stress: 0,
@@ -72,20 +85,45 @@ export async function GET(req: Request) {
       ocd: 0,
     };
 
+    let safetyFlag = false;
+    const defaultMaxScore = Math.max(...Object.values(SCALE_SCORE_MAP));
+
     for (const answer of session.answers) {
       const question = questionMap.get(answer.questionId.toString());
       if (!question) continue;
 
-      const score = SCALE_SCORE_MAP[answer.option] ?? 0;
       const category = question.category as DisorderKey;
+      let score = 0;
+
+      if (question.options && question.options.length > 0) {
+        const matched = question.options.find(
+          (opt) => opt.value === answer.option
+        );
+        if (matched) {
+          score = matched.score;
+        }
+      } else {
+        const option = answer.option as ScaleOption;
+        if (Object.values(ScaleOption).includes(option)) {
+          score = SCALE_SCORE_MAP[option] ?? 0;
+        }
+      }
+
       scores[category] += score;
-      counts[category] += 1;
+      const maxScoreForQuestion =
+        question.options && question.options.length > 0
+          ? Math.max(...question.options.map((opt) => opt.score))
+          : defaultMaxScore;
+      maxPossible[category] += maxScoreForQuestion;
+
+      if (category === "depression" && question.order === 8 && score > 0) {
+        safetyFlag = true;
+      }
     }
 
-    const maxScaleScore = Math.max(...Object.values(SCALE_SCORE_MAP));
     const normalizedScores = DISORDER_KEYS.reduce((acc, key) => {
-      const count = counts[key];
-      acc[key] = count > 0 ? scores[key] / (count * maxScaleScore) : 0;
+      const possible = maxPossible[key];
+      acc[key] = possible > 0 ? scores[key] / possible : 0;
       return acc;
     }, {} as Record<DisorderKey, number>);
 
@@ -117,6 +155,7 @@ export async function GET(req: Request) {
     return jsonOk({
       results,
       dominant,
+      safetyFlag,
     });
   } catch (error) {
     logger.error("SESSION_RESULT_ERROR", error);

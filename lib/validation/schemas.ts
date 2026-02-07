@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { ScaleOption } from "@/lib/scale";
 import { DISORDER_KEYS } from "@/types/disorder";
 
 const objectId = z
@@ -77,6 +76,20 @@ export const questionSchema = z
       .max(2, "Weight must be at most 2")
       .optional(),
     isActive: z.boolean().optional(),
+    options: z
+      .array(
+        z.object({
+          value: z.string().trim().min(1, "Option value is required"),
+          label: z.string().trim().min(1, "Option label is required"),
+          score: z
+            .number()
+            .int("Score must be a whole number")
+            .min(0, "Score must be at least 0")
+            .max(4, "Score must be at most 4"),
+        })
+      )
+      .min(2, "Provide at least two options")
+      .optional(),
   })
   .strict();
 
@@ -106,6 +119,6 @@ export const answerSchema = z
   .object({
     sessionId: objectId,
     questionId: objectId,
-    option: z.nativeEnum(ScaleOption),
+    option: z.string().min(1, "Option is required"),
   })
   .strict();

@@ -96,7 +96,7 @@ export async function GET(req: Request) {
       .sort({ order: 1 })
       .skip(testSession.currentQuestionIndex)
       .limit(1)
-      .select("_id text category type")
+      .select("_id text category type options")
       .lean();
 
     const question = nextQuestion[0] ?? null;
@@ -117,6 +117,7 @@ export async function GET(req: Request) {
         text: question.text,
         category: question.category,
         type: question.type,
+        options: question.options ?? undefined,
       },
       currentIndex: testSession.currentQuestionIndex + 1,
       total,

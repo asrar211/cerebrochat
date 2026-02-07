@@ -45,6 +45,7 @@ export default function ResultSummary() {
   }, [sessionId]);
 
   const dominant = useMemo(() => result?.dominant ?? null, [result]);
+  const safetyFlag = useMemo(() => result?.safetyFlag ?? false, [result]);
   const hasNoSymptoms = useMemo(
     () => result?.results.every((item) => item.score === 0) ?? false,
     [result]
@@ -89,6 +90,13 @@ export default function ResultSummary() {
             A brief snapshot of your responses based on standardized tools.
           </p>
         </div>
+
+        {safetyFlag ? (
+          <Alert variant="error">
+            If you are having thoughts of self-harm or suicide, please seek
+            immediate help.
+          </Alert>
+        ) : null}
 
         {hasNoSymptoms ? (
           <Card>
@@ -166,8 +174,8 @@ export default function ResultSummary() {
 
         <Card className="space-y-3 text-sm text-emerald-800/80">
           <p>
-            These results are based on screening questionnaires (PHQ-9, GAD-7,
-            PSS). They are not a clinical diagnosis.
+            These results are based on screening tools (PHQ-9, GAD-7, PSS-10,
+            ASRS v1.1, Y-BOCS). They are not a clinical diagnosis.
           </p>
           <p>
             If you are feeling distressed, please consider reaching out to a

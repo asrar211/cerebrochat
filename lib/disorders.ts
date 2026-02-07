@@ -33,21 +33,20 @@ export const DISORDER_CONFIG: Record<
 
   stress: {
     label: "Stress",
-    testName: "PSS",
+    testName: "PSS-10",
     severity: (score) => {
-      if (score <= 3) return "Low";
-      if (score <= 6) return "Moderate";
+      if (score <= 13) return "Low";
+      if (score <= 26) return "Moderate";
       return "High";
     },
   },
 
   adhd: {
     label: "ADHD",
-    testName: "ADHD-SR",
+    testName: "ASRS v1.1",
     severity: (score) => {
-      if (score <= 2) return "Minimal";
-      if (score <= 5) return "Mild";
-      return "Significant";
+      if (score >= 4) return "Positive screen";
+      return "Negative screen";
     },
   },
 
@@ -55,9 +54,11 @@ export const DISORDER_CONFIG: Record<
     label: "Obsessive-Compulsive Disorder",
     testName: "Y-BOCS",
     severity: (score) => {
-      if (score <= 3) return "Low";
-      if (score <= 6) return "Moderate";
-      return "High";
+      if (score <= 7) return "Subclinical";
+      if (score <= 15) return "Mild";
+      if (score <= 23) return "Moderate";
+      if (score <= 31) return "Severe";
+      return "Extreme";
     },
   },
 };

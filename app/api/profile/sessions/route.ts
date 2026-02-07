@@ -54,11 +54,20 @@ export async function GET(req: Request) {
     const questions = await Question.find({
       _id: { $in: Array.from(allQuestionIds) },
     })
-      .select("_id category")
+      .select("_id category options")
       .lean();
 
-    const questionMap = new Map<string, DisorderKey>(
-      questions.map((q) => [q._id.toString(), q.category as DisorderKey])
+    const questionMap = new Map<
+      string,
+      { category: DisorderKey; options?: { value: string; score: number }[] }
+    >(
+      questions.map((q) => [
+        q._id.toString(),
+        {
+          category: q.category as DisorderKey,
+          options: q.options ?? undefined,
+        },
+      ])
     );
 
     const summaries = sessions.map((sessionItem) => {
@@ -69,28 +78,47 @@ export async function GET(req: Request) {
         adhd: 0,
         ocd: 0,
       };
-      const counts: Record<DisorderKey, number> = {
+      const maxPossible: Record<DisorderKey, number> = {
         depression: 0,
         anxiety: 0,
         stress: 0,
         adhd: 0,
         ocd: 0,
       };
+      const defaultMaxScore = Math.max(...Object.values(SCALE_SCORE_MAP));
 
       for (const answer of sessionItem.answers) {
-        const category = questionMap.get(answer.questionId.toString());
-        if (!category) continue;
-        const option = answer.option as ScaleOption;
-        if (!Object.values(ScaleOption).includes(option)) continue;
-        const score = SCALE_SCORE_MAP[option] ?? 0;
+        const question = questionMap.get(answer.questionId.toString());
+        if (!question) continue;
+        const category = question.category;
+        let score = 0;
+
+        if (question.options && question.options.length > 0) {
+          const matched = question.options.find(
+            (opt) => opt.value === answer.option
+          );
+          if (matched) {
+            score = matched.score;
+          }
+        } else {
+          const option = answer.option as ScaleOption;
+          if (Object.values(ScaleOption).includes(option)) {
+            score = SCALE_SCORE_MAP[option] ?? 0;
+          }
+        }
+
         scores[category] += score;
-        counts[category] += 1;
+
+        const maxScoreForQuestion =
+          question.options && question.options.length > 0
+            ? Math.max(...question.options.map((opt) => opt.score))
+            : defaultMaxScore;
+        maxPossible[category] += maxScoreForQuestion;
       }
 
-      const maxScaleScore = Math.max(...Object.values(SCALE_SCORE_MAP));
       const normalizedScores = DISORDER_KEYS.reduce((acc, key) => {
-        const count = counts[key];
-        acc[key] = count > 0 ? scores[key] / (count * maxScaleScore) : 0;
+        const possible = maxPossible[key];
+        acc[key] = possible > 0 ? scores[key] / possible : 0;
         return acc;
       }, {} as Record<DisorderKey, number>);
 

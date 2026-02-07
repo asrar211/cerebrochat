@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ScaleOption, SCALE_LABELS } from "@/lib/scale";
+import { DEFAULT_SCALE_OPTIONS } from "@/lib/scale";
 import { requestJson, ApiClientError } from "@/lib/api/client";
-import type { SessionQuestionPayload } from "@/types/session";
+import type { QuestionOption, SessionQuestionPayload } from "@/types/session";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -21,6 +21,7 @@ export default function SessionChat() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentQuestionId, setCurrentQuestionId] = useState<string | null>(null);
+  const [currentOptions, setCurrentOptions] = useState<QuestionOption[]>([]);
   const [meta, setMeta] = useState<Pick<
     SessionQuestionPayload,
     "currentIndex" | "total" | "status"
@@ -65,6 +66,11 @@ export default function SessionChat() {
 
       if (question.id !== currentQuestionId) {
         setCurrentQuestionId(question.id);
+        const options =
+          question.options && question.options.length > 0
+            ? question.options
+            : DEFAULT_SCALE_OPTIONS;
+        setCurrentOptions(options);
         setMessages((prev) => [
           ...prev,
           { role: "bot", text: question.text },
@@ -87,14 +93,14 @@ export default function SessionChat() {
     }
   }, [sessionId]);
 
-  const submitAnswer = async (option: ScaleOption) => {
+  const submitAnswer = async (option: QuestionOption) => {
     if (!currentQuestionId || loading) return;
 
     setMessages((prev) => [
       ...prev,
       {
         role: "user",
-        text: SCALE_LABELS[option],
+        text: option.label,
       },
     ]);
 
@@ -106,7 +112,7 @@ export default function SessionChat() {
         body: {
           sessionId,
           questionId: currentQuestionId,
-          option,
+          option: option.value,
         },
       });
 
@@ -123,7 +129,7 @@ export default function SessionChat() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-(--app-bg)">
+    <div className="flex min-h-dvh flex-col bg-[var(--app-bg)]">
       <div className="border-b border-emerald-100 bg-white/70 px-4 py-3 backdrop-blur">
         <div className="mx-auto flex w-full max-w-3xl items-center justify-between">
           <p className="text-sm font-semibold text-emerald-900">{progressLabel}</p>
@@ -179,15 +185,15 @@ export default function SessionChat() {
       <div className="border-t border-emerald-100 bg-white/90 px-4 py-4">
         <div className="mx-auto grid w-full max-w-3xl gap-2">
           {currentQuestionId ? (
-            Object.values(ScaleOption).map((opt) => (
+            currentOptions.map((opt) => (
               <Button
-                key={opt}
+                key={opt.value}
                 variant="secondary"
                 className="w-full justify-start"
                 disabled={loading}
                 onClick={() => submitAnswer(opt)}
               >
-                {SCALE_LABELS[opt]}
+                {opt.label}
               </Button>
             ))
           ) : (

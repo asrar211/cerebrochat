@@ -10,9 +10,9 @@ import { logger } from "@/lib/logger";
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user?.id) {
-    return jsonError("Unauthorized", 401, "unauthorized");
-  }
+  // if (!session?.user?.id) {
+  //   return jsonError("Unauthorized", 401, "unauthorized");
+  // }
 
   const body = await readJson(req);
   if (!body) {
@@ -51,7 +51,7 @@ export async function GET() {
 
     const questions = await Question.find({ isActive: true })
       .sort({ order: 1 })
-      .select("_id text category type")
+      .select("_id text category type options")
       .lean();
 
     return jsonOk(
@@ -60,6 +60,7 @@ export async function GET() {
         text: q.text,
         category: q.category,
         type: q.type,
+        options: q.options ?? undefined,
       }))
     );
   } catch (error) {

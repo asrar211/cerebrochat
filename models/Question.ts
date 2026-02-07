@@ -11,6 +11,11 @@ export interface IQuestion extends Document {
   order: number;
   weight: number;
   isActive: boolean;
+  options?: {
+    value: string;
+    label: string;
+    score: number;
+  }[];
 }
 
 const QuestionSchema = new Schema<IQuestion>(
@@ -50,6 +55,17 @@ const QuestionSchema = new Schema<IQuestion>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+
+    options: {
+      type: [
+        {
+          value: { type: String, required: true, trim: true },
+          label: { type: String, required: true, trim: true },
+          score: { type: Number, required: true, min: 0, max: 4 },
+        },
+      ],
+      default: undefined,
     },
   },
   { timestamps: true }

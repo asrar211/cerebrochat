@@ -7,6 +7,7 @@ import { jsonError, jsonOk, zodErrorsToFieldMap } from "@/lib/api/response";
 import { answerSchema } from "@/lib/validation/schemas";
 import { readJson } from "@/lib/api/parse";
 import { logger } from "@/lib/logger";
+import { ScaleOption } from "@/lib/scale";
 
 export async function POST(req: Request) {
   const authSession = await getServerSession(authOptions);
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
       .sort({ order: 1 })
       .skip(session.currentQuestionIndex)
       .limit(1)
-      .select("_id")
+      .select("_id options")
       .lean();
 
     const expectedQuestion = currentQuestion[0];
@@ -67,6 +68,26 @@ export async function POST(req: Request) {
 
     if (expectedQuestion._id.toString() !== questionId) {
       return jsonError("Answer out of order", 409, "out_of_order");
+    }
+
+    const hasCustomOptions =
+      Array.isArray(expectedQuestion.options) &&
+      expectedQuestion.options.length > 0;
+
+    if (hasCustomOptions) {
+      const isValidCustom = expectedQuestion.options.some(
+        (opt: { value: string }) => opt.value === option
+      );
+      if (!isValidCustom) {
+        return jsonError("Invalid option", 400, "invalid_option");
+      }
+    } else {
+      const isValidScale = Object.values(ScaleOption).includes(
+        option as ScaleOption
+      );
+      if (!isValidScale) {
+        return jsonError("Invalid option", 400, "invalid_option");
+      }
     }
 
     session.answers.push({ questionId, option });

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { signOut } from "next-auth/react";
 import { requestJson, ApiClientError } from "@/lib/api/client";
 import type { SessionsResponse, SessionSummary, UserProfile } from "@/types/profile";
 import { profileUpdateSchema } from "@/lib/validation/schemas";
@@ -147,6 +148,10 @@ export default function ProfilePage() {
     }
   };
 
+  const handleLogout = () => {
+    signOut({ callbackUrl: "/login" });
+  };
+
   if (loading) {
     return (
       <div className="min-h-dvh bg-(--app-bg) px-6 py-10">
@@ -248,6 +253,14 @@ export default function ProfilePage() {
 
             <Button onClick={handleSave} disabled={saving} className="w-full">
               {saving ? "Saving..." : "Save changes"}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full border-rose-200 text-rose-600 hover:border-rose-300 hover:text-rose-700"
+              onClick={handleLogout}
+            >
+              Sign out
             </Button>
           </Card>
 

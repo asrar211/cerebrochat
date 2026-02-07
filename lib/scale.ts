@@ -21,3 +21,9 @@ export const SCALE_LABELS: Record<ScaleOption, string> = {
   [ScaleOption.MORE_THAN_HALF]: "More than half the days",
   [ScaleOption.NEARLY_EVERY_DAY]: "Nearly every day",
 };
+
+export const DEFAULT_SCALE_OPTIONS = Object.values(ScaleOption).map((value) => ({
+  value,
+  label: SCALE_LABELS[value],
+  score: SCALE_SCORE_MAP[value],
+}));
