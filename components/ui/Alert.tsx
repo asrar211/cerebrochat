@@ -4,7 +4,7 @@ import { cn } from "@/lib/cn";
 type AlertVariant = "error" | "info";
 
 const variantStyles: Record<AlertVariant, string> = {
-  error: "border-rose-200 bg-rose-50 text-rose-700",
+  error: "border-rose-200 bg-rose-100 text-rose-700",
   info: "border-emerald-200 bg-emerald-50 text-emerald-700",
 };
 
